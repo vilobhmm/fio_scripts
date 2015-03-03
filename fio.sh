@@ -29,8 +29,8 @@ DIRECT=1
 INITIALIZE=0
 # by default  don't remove the data file after the tests
 REMOVE=0
-BINARY="./fio"
-DIRECTORY="/domain0/fiotest"
+BINARY="/home/vilobhmm/study/fab/fio/fio"
+DIRECTORY="/home/vilobhmm/study/fab/fio/local"
 OUTPUT="."
 TESTS="all"
 SECS="60"
@@ -53,15 +53,12 @@ DTRACE=0
 DTRACE1=""
 DTRACE2=""
 
-MULTIUSERS="01 08 16 32 64"
-READSIZES="0008 0032 0128"
-SEQREADSIZES="0128 1024"
-SEQREADSIZES="1024"
+MULTIUSERS="01 04 08 16 32"
+READSIZES="0004 0008 0016 0032 0064 0128"
+SEQREADSIZES="0004 0008 0016 0032 0128"
 
-WRITESIZES="0001 0004 0008 0016 0032 0064 0128"
-MULTIWRITEUSERS="01 02 04 08 16"
-WRITESIZES="0001 0008 0128"
-MULTIWRITEUSERS="01 04 16"
+WRITESIZES="0004 0008 0016 0032 0064 0128"
+MULTIWRITEUSERS="01 04 08 16 32"
 
 usage()
 {
@@ -323,8 +320,8 @@ if [ -f /etc/delphix/version ]  ; then
    fi
 fi
 
-all="randrw read write readrand"
-all="readrand write read "
+all="randrw read write readrand_4k readrand_8k"
+all="readrand_4k readrand_8k write read "
 if [ $TESTS = "all" ] ; then
   jobs=$all
 else 
@@ -629,7 +626,19 @@ done >> $JOBFILE
 
 
 # read random, set blocksize, vary # of  users
-function readrand {
+function readrand_4k {
+for i in 1 ; do
+cat << EOF
+[job$JOBNUMBER]
+rw=randread
+bs=4k
+numjobs=1
+offset=$OFFSET
+EOF
+done >> $JOBFILE
+}
+
+function readrand_8k {
 for i in 1 ; do
 cat << EOF
 [job$JOBNUMBER]
@@ -637,6 +646,34 @@ rw=randread
 bs=8k
 numjobs=1
 offset=$OFFSET
+EOF
+done >> $JOBFILE
+}
+
+function writerand_4k {
+for i in 1 ; do
+cat << EOF
+[job$JOBNUMBER]
+rw=randwrite
+bs=4k
+numjobs=1
+offset=$OFFSET
+sync=1
+direct=0
+EOF
+done >> $JOBFILE
+}
+
+function writerand_8k {
+for i in 1 ; do
+cat << EOF
+[job$JOBNUMBER]
+rw=randwrite
+bs=8k
+numjobs=1
+offset=$OFFSET
+sync=1
+direct=0
 EOF
 done >> $JOBFILE
 }
@@ -689,7 +726,70 @@ for job in $jobs; do # {
          cmd="$DTRACE1 $BINARY $JOBFILE $DTRACE2> ${PREFIX}.out"
          echo $cmd
          [[ $EVAL -eq 1 ]] && eval $cmd
-  elif [ $job ==  "readrand" ] ; then
+  elif [ $job ==  "readrand_4k" ] ; then
+       for USERS in `eval echo $MULTIUSERS` ; do 
+         #echo "j: $USERS"
+         PREFIX="$OUTPUT/${job}_u${USERS}_kb0004"
+         JOBFILE=${PREFIX}.job
+         # init creates the shared job file potion
+         init
+         # for random read, offsets shouldn't be needed
+         # offsets
+         OFFSET=0
+         loops=1
+         NUSERS=`echo $USERS | sed -e 's/^00*//'`
+         while [[ $loops -le $NUSERS ]] ; do
+            JOBNUMBER=$loops
+            eval $jobs
+            loops=$(expr $loops + 1)
+         done
+         cmd="$DTRACE1 $BINARY $JOBFILE $DTRACE2> ${PREFIX}.out"
+         echo $cmd
+         [[ $EVAL -eq 1 ]] && eval $cmd
+       done
+  elif [ $job ==  "readrand_8k" ] ; then
+       for USERS in `eval echo $MULTIUSERS` ; do 
+         #echo "j: $USERS"
+         PREFIX="$OUTPUT/${job}_u${USERS}_kb0008"
+         JOBFILE=${PREFIX}.job
+         # init creates the shared job file potion
+         init
+         # for random read, offsets shouldn't be needed
+         # offsets
+         OFFSET=0
+         loops=1
+         NUSERS=`echo $USERS | sed -e 's/^00*//'`
+         while [[ $loops -le $NUSERS ]] ; do
+            JOBNUMBER=$loops
+            eval $jobs
+            loops=$(expr $loops + 1)
+         done
+         cmd="$DTRACE1 $BINARY $JOBFILE $DTRACE2> ${PREFIX}.out"
+         echo $cmd
+         [[ $EVAL -eq 1 ]] && eval $cmd
+       done
+  elif [ $job ==  "writerand_4k" ] ; then
+       for USERS in `eval echo $MULTIUSERS` ; do 
+         #echo "j: $USERS"
+         PREFIX="$OUTPUT/${job}_u${USERS}_kb0004"
+         JOBFILE=${PREFIX}.job
+         # init creates the shared job file potion
+         init
+         # for random read, offsets shouldn't be needed
+         # offsets
+         OFFSET=0
+         loops=1
+         NUSERS=`echo $USERS | sed -e 's/^00*//'`
+         while [[ $loops -le $NUSERS ]] ; do
+            JOBNUMBER=$loops
+            eval $jobs
+            loops=$(expr $loops + 1)
+         done
+         cmd="$DTRACE1 $BINARY $JOBFILE $DTRACE2> ${PREFIX}.out"
+         echo $cmd
+         [[ $EVAL -eq 1 ]] && eval $cmd
+       done
+  elif [ $job ==  "writerand_8k" ] ; then
        for USERS in `eval echo $MULTIUSERS` ; do 
          #echo "j: $USERS"
          PREFIX="$OUTPUT/${job}_u${USERS}_kb0008"
