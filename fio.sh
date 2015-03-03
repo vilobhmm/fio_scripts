@@ -29,12 +29,12 @@ DIRECT=1
 INITIALIZE=0
 # by default  don't remove the data file after the tests
 REMOVE=0
-BINARY="/home/vilobhmm/study/fab/fio/fio"
-DIRECTORY="/home/vilobhmm/study/fab/fio/local"
-OUTPUT="."
+BINARY="/home/vilobhmm/fio/fio"
+DIRECTORY="/home/vilobhmm/local"
+OUTPUT="/home/vilobhmm/local"
 TESTS="all"
 SECS="60"
-MEGABYTES="65536"
+MEGABYTES="2048"
 # by default  don't force the run, ie prompt for confirmations
 FORCE="n"
 CREATE=0
